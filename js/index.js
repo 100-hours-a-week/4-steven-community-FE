@@ -12,7 +12,7 @@ const ITEMS_PER_LOAD = 5;
 const DEFAULT_SORT = 'recent';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
-let offset = 0;
+let nextCursor = null;
 let isEnd = false;
 let isProcessing = false;
 
@@ -25,13 +25,13 @@ const updateSortVisibility = () => {
 };
 
 // getBoardItem 함수
-const getBoardItem = async (offsetValue = 0, limitValue = 5) => {
+const getBoardItem = async (cursorValue = null, limitValue = 5) => {
     const result =
         currentKeyword.trim() === ''
-            ? await getPosts(offsetValue, limitValue)
+            ? await getPosts(cursorValue, limitValue)
             : await searchPosts(
                   currentKeyword,
-                  offsetValue,
+                  cursorValue,
                   limitValue,
                   currentSort,
               );
@@ -47,12 +47,12 @@ const setBoardItem = boardData => {
         const itemsHtml = boardData
             .map(data =>
                 BoardItem(
-                    data.id,
+                    data.postId,
                     data.createdAt,
-                    data.title,
+                    data.postTitle,
                     data.viewCount,
-                    data.author ? data.author.profileImageUrl : null,
-                    data.author ? data.author.nickname : null,
+                    data.postWriter ? data.postWriter.postWriterProfileImageUrl : null,
+                    data.postWriter ? data.postWriter.postWriterNickname : null,
                     data.commentCount,
                     data.likeCount,
                 ),
@@ -75,17 +75,24 @@ const loadBoardItems = async ({ reset = false } = {}) => {
 
     try {
         if (reset) {
-            offset = 0;
+            nextCursor = null;
             isEnd = false;
             resetBoardList();
         }
-        const items = await getBoardItem(offset, ITEMS_PER_LOAD);
+        const cursorData = await getBoardItem(nextCursor, ITEMS_PER_LOAD);
+        const items = cursorData.posts;
+
         if (!items || items.length === 0) {
             isEnd = true;
             return;
         }
         setBoardItem(items);
-        offset += ITEMS_PER_LOAD;
+        
+        if (!cursorData.hasNext) {
+            isEnd = true;
+        } else {
+            nextCursor = cursorData.startingAfter;
+        }
     } catch (error) {
         console.error('Error fetching items:', error);
         isEnd = true;
@@ -133,10 +140,6 @@ const addSortEvent = () => {
 
 // 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
-    offset = INITIAL_OFFSET;
-    isEnd = false;
-    isProcessing = false;
-
     window.addEventListener('scroll', async () => {
         const hasScrolledToThreshold =
             window.scrollY + window.innerHeight >=

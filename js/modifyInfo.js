@@ -129,7 +129,7 @@ const changeEventHandler = async (event, uid) => {
             // 파일 업로드를 위한 POST 요청 실행
             try {
                 const { ok, data } = await requestJson(
-                    `${getServerUrl()}/v1/users/upload/profile-image`,
+                    `${getServerUrl()}/users/me/profile-image`,
                     {
                         method: 'POST',
                         body: formData,
@@ -139,11 +139,11 @@ const changeEventHandler = async (event, uid) => {
                 if (!ok) throw new Error('서버 응답 오류');
                 localStorage.setItem(
                     'profileImageUrl',
-                    data.profileImageUrl,
+                    data.fileUrl,
                 );
-                changeData.profileImageUrl = data.profileImageUrl;
+                changeData.profileImageUrl = data.fileUrl;
                 profilePreview.src = resolveImageUrl(
-                    data.profileImageUrl,
+                    data.fileUrl,
                     DEFAULT_PROFILE_IMAGE,
                 );
                 if (removeProfileButton)
@@ -165,7 +165,7 @@ const sendModifyData = async () => {
         } else {
             const { status } = await userModify(changeData);
 
-            if (status === HTTP_CREATED) {
+            if (status === HTTP_OK) {
                 localStorage.removeItem('profileImageUrl');
                 saveToastMessage('수정완료');
                 location.href = '/html/modifyInfo.html';
@@ -183,10 +183,10 @@ const deleteAccount = async () => {
     const callback = async () => {
         const { status } = await userDelete();
 
-        if (status === HTTP_OK) {
+        if (status === 204) {
             try {
-                await requestJson(`${getServerUrl()}/v1/auth/logout`, {
-                    method: 'POST',
+                await requestJson(`${getServerUrl()}/auth`, {
+                    method: 'DELETE',
                     credentials: 'include',
                 });
             } catch (error) {

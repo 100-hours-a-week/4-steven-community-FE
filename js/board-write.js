@@ -53,9 +53,9 @@ const observeSignupData = () => {
 // 엘리먼트 값 가져오기 title, content
 const getBoardData = () => {
     return {
-        title: boardWrite.title,
-        content: boardWrite.content,
-        attachFileUrl:
+        postTitle: boardWrite.title,
+        postContent: boardWrite.content,
+        postImageUrl:
             localStorage.getItem('postFileUrl') === null
                 ? undefined
                 : localStorage.getItem('postFileUrl'),
@@ -69,7 +69,7 @@ const addBoard = async () => {
     // boardData가 false일 경우 함수 종료
     if (!boardData) return Dialog('게시글', '게시글을 입력해주세요.');
 
-    if (boardData.title.length > MAX_TITLE_LENGTH)
+    if (boardData.postTitle.length > MAX_TITLE_LENGTH)
         return Dialog('게시글', '제목은 26자 이하로 입력해주세요.');
 
     if (!isModifyMode) {
@@ -78,7 +78,7 @@ const addBoard = async () => {
 
         if (status === HTTP_CREATED) {
             localStorage.removeItem('postFileUrl');
-            window.location.href = `/html/board.html?id=${data.insertId}`;
+            window.location.href = `/html/board.html?id=${data.postId}`;
         } else {
             const helperElement = contentHelpElement;
             helperElement.textContent = '제목, 내용을 모두 작성해주세요.';
@@ -138,11 +138,12 @@ const changeEventHandler = async (event, uid) => {
         }
 
         const formData = new FormData();
-        formData.append('postFile', file);
+        formData.append('postImage', file);
 
         // 파일 업로드를 위한 POST 요청 실행
         try {
-            const { ok, data } = await fileUpload(formData);
+            const postId = getQueryString('postId');
+            const { ok, data } = await fileUpload(formData, postId);
             if (!ok) throw new Error('서버 응답 오류');
             localStorage.setItem('postFileUrl', data.fileUrl);
         } catch (error) {
@@ -189,10 +190,10 @@ const addEvent = () => {
 };
 
 const setModifyData = data => {
-    titleInput.value = data.title;
-    contentInput.value = data.content;
+    titleInput.value = data.postTitle;
+    contentInput.value = data.postContent;
 
-    const fileUrl = data.fileUrl || resolveImageUrl(data.filePath);
+    const fileUrl = data.postImageUrl ? resolveImageUrl(data.postImageUrl) : null;
     if (fileUrl) {
         // fileUrl에서 파일 이름만 추출하여 표시
         const fileName = fileUrl.split('/').pop();
@@ -219,8 +220,8 @@ const setModifyData = data => {
         imagePreviewText.style.display = 'none';
     }
 
-    boardWrite.title = data.title;
-    boardWrite.content = data.content;
+    boardWrite.title = data.postTitle;
+    boardWrite.content = data.postContent;
 
     observeSignupData();
 };
@@ -241,7 +242,7 @@ const init = async () => {
         isModifyMode = true;
         modifyData = await getBoardModifyData(modifyId);
 
-        if (data.idx !== modifyData.writerId) {
+        if (parseInt(data.data.userId, 10) !== parseInt(modifyData.postWriter.postWriterId, 10)) {
             Dialog('권한 없음', '권한이 없습니다.', () => {
                 window.location.href = '/';
             });

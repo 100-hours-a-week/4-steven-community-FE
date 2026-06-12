@@ -53,11 +53,11 @@ const sendSignupData = async () => {
         localStorage.removeItem('profileImageUrl');
         location.href = '/html/login.html';
     } else {
-        if (code === 'ALREADY_EXIST_EMAIL') {
+        if (code === 'USER_EMAIL_CONFLICT') {
             Dialog('회원 가입 실패', '이미 사용 중인 이메일입니다.');
-        } else if (code === 'ALREADY_EXIST_NICKNAME') {
+        } else if (code === 'USER_NICKNAME_CONFLICT') {
             Dialog('회원 가입 실패', '이미 사용 중인 닉네임입니다.');
-        } else if (code === 'INVALID_INPUT') {
+        } else if (code === 'VALIDATION_ERROR') {
             Dialog('회원 가입 실패', '입력값을 확인해주세요.');
         } else {
             Dialog('회원 가입 실패', '잠시 뒤 다시 시도해 주세요', () => {});
@@ -81,7 +81,9 @@ const changeEventHandler = async (event, uid) => {
         const helperElement = document.querySelector(
             `.inputBox p[name="${uid}"]`,
         );
-        helperElement.textContent = '';
+        if (helperElement) {
+            helperElement.textContent = '';
+        }
     }
     observeSignupData();
 };
@@ -249,7 +251,7 @@ const uploadProfileImage = () => {
                 if (!ok) throw new Error('서버 응답 오류');
                 localStorage.setItem(
                     'profileImageUrl',
-                    data.profileImageUrl,
+                    data.fileUrl,
                 );
             } catch (error) {
                 console.error('업로드 중 오류 발생:', error);

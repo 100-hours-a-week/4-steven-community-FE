@@ -1,9 +1,13 @@
 import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
-export const getPosts = (offset, limit) => {
+export const getPosts = (startingAfter, limit) => {
+    const params = new URLSearchParams({ limit });
+    if (startingAfter) {
+        params.append('startingAfter', startingAfter);
+    }
     const result = requestJson(
-        `${getServerUrl()}/v1/posts?offset=${offset}&limit=${limit}`,
+        `${getServerUrl()}/posts?${params.toString()}`,
         {
             credentials: 'include',
         },
@@ -11,15 +15,17 @@ export const getPosts = (offset, limit) => {
     return result;
 };
 
-export const searchPosts = (keyword, offset = 0, limit = 5, sort = 'recent') => {
-    const query = new URLSearchParams({
+export const searchPosts = (keyword, startingAfter = null, limit = 5, sort = 'recent') => {
+    const params = new URLSearchParams({
         keyword,
-        offset,
         limit,
         sort,
     });
+    if (startingAfter) {
+        params.append('startingAfter', startingAfter);
+    }
     const result = requestJson(
-        `${getServerUrl()}/v1/posts/search?${query.toString()}`,
+        `${getServerUrl()}/posts/search?${params.toString()}`,
         {
             credentials: 'include',
         },

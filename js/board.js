@@ -54,21 +54,21 @@ const setBoardDetail = data => {
     const imgElement = document.querySelector('.img');
     const nicknameElement = document.querySelector('.nickname');
 
-    titleElement.textContent = data.title;
+    titleElement.textContent = data.postTitle;
     const date = new Date(data.createdAt);
     const formattedDate = `${date.getFullYear()}-${padTo2Digits(date.getMonth() + 1)}-${padTo2Digits(date.getDate())} ${padTo2Digits(date.getHours())}:${padTo2Digits(date.getMinutes())}:${padTo2Digits(date.getSeconds())}`;
     createdAtElement.textContent = formattedDate;
 
     imgElement.src = resolveImageUrl(
-        data.profileImage,
+        data.postWriter.postWriterProfileImageUrl,
         DEFAULT_PROFILE_IMAGE,
     );
 
-    nicknameElement.textContent = data.nickname;
+    nicknameElement.textContent = data.postWriter.postWriterNickname;
 
     // 바디 정보
     const contentImgElement = document.querySelector('.contentImg');
-    const fileUrl = data.fileUrl || resolveImageUrl(data.filePath);
+    const fileUrl = data.postImageUrl ? resolveImageUrl(data.postImageUrl) : null;
     if (fileUrl) {
         console.log(fileUrl);
         const img = document.createElement('img');
@@ -76,7 +76,7 @@ const setBoardDetail = data => {
         contentImgElement.appendChild(img);
     }
     const contentElement = document.querySelector('.content');
-    contentElement.textContent = data.content;
+    contentElement.textContent = data.postContent;
 
     const likeButtonElement = document.querySelector('.likeButton');
     const likeCountElement = likeButtonElement.querySelector('h3');
@@ -93,7 +93,7 @@ const setBoardDetail = data => {
         try {
             if (!isLiked) {
                 const { ok, status, code, data: likeData } = await likePost(
-                    data.id,
+                    data.postId,
                 );
                 if (ok) {
                     isLiked = true;
@@ -113,7 +113,7 @@ const setBoardDetail = data => {
                 }
             } else {
                 const { ok, status, code, data: likeData } = await unlikePost(
-                    data.id,
+                    data.postId,
                 );
                 if (ok) {
                     isLiked = false;
@@ -145,8 +145,8 @@ const setBoardDetail = data => {
 };
 
 const setBoardModify = async (data, myInfo) => {
-    if (myInfo.idx === data.writerId) {
-        const modifyElement = document.querySelector('.hidden');
+    if (parseInt(myInfo.userId, 10) === parseInt(data.postWriter.postWriterId, 10)) {
+        const modifyElement = document.querySelector('.mod');
         modifyElement.classList.remove('hidden');
 
         const modifyBtnElement = document.querySelector('#deleteBtn');
@@ -168,7 +168,7 @@ const setBoardModify = async (data, myInfo) => {
 
         const modifyBtnElement2 = document.querySelector('#modifyBtn');
         modifyBtnElement2.addEventListener('click', () => {
-            window.location.href = `/html/board-modify.html?postId=${data.id}`;
+            window.location.href = `/html/board-modify.html?postId=${data.postId}`;
         });
     }
 };
@@ -260,7 +260,7 @@ const init = async () => {
 
         const pageData = await getBoardDetail(pageId);
 
-        if (parseInt(pageData.userId, 10) === parseInt(myInfo.userId, 10)) {
+        if (parseInt(pageData.postWriter.postWriterId, 10) === parseInt(myInfo.userId, 10)) {
             setBoardModify(pageData, myInfo);
         }
         setBoardDetail(pageData);

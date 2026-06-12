@@ -11,6 +11,13 @@ export const parseJsonSafe = async response => {
 };
 
 export const requestJson = async (url, options = {}) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        options.headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${token}`
+        };
+    }
     const response = await fetch(url, options);
     const body = await parseJsonSafe(response);
     return {
