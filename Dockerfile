@@ -1,14 +1,17 @@
-FROM node:22
-
-WORKDIR /app
+FROM node:22-alpine
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
-RUN npm ci --omit=dev
+WORKDIR /app
+RUN chown node:node /app
 
-COPY . .
+USER node
 
-EXPOSE 8082
+COPY --chown=node:node package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --chown=node:node . .
+
+EXPOSE 3000
 
 CMD ["node", "app.js"]
